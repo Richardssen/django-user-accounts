@@ -23,7 +23,29 @@ class SignupCodeAdmin(admin.ModelAdmin):
 class AccountAdmin(admin.ModelAdmin):
 
     raw_id_fields = ["user"]
-
+    """
+    list_display=[
+        "user",
+        "name",
+        "avatar",
+        "affiliation",
+        "location",
+        "website",
+        "twitter_username",
+        "created_at",
+    ],
+    list_filter=[
+        "created_at",
+    ],
+    search_fields=[
+        "user__username",
+        "user__email",
+        "name",
+        "location",
+        "website",
+        "twitter_username",
+    ]
+    """
 
 class AccountDeletionAdmin(AccountAdmin):
 

@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
-
+import os
+import uuid
 import datetime
 import operator
 
@@ -28,11 +29,30 @@ try:
 except ImportError:  # python 2
     from urllib import urlencode
 
+def avatar_upload(instance, filename):
+    ext = filename.split(".")[-1]
+    filename = "%s.%s" % (uuid.uuid4(), ext)
+    return os.path.join("avatars", filename)
+
 
 @python_2_unicode_compatible
 class Account(models.Model):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, related_name="account", verbose_name=_("user"), on_delete=models.CASCADE)
+    name = models.CharField(max_length=75, blank=True)
+    apellidos = models.CharField(max_length=125, blank=True)
+    avatar = models.ImageField(upload_to=avatar_upload, blank=True)
+    bio = models.TextField(blank=True)
+    affiliation = models.CharField(max_length=100, blank=True)
+    location = models.CharField(max_length=100, blank=True)
+    website = models.CharField(max_length=250, blank=True)
+    twitter_username = models.CharField("Twitter Username", max_length=100, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    modified_at = models.DateTimeField(default=timezone.now)
+#    if 'mod_address' in settings.INSTALLED_APPS:
+#        domicilio = models.ForeignKey('mod_addresses.Domicilio', on_delete=models.PROTECT, null=True, blank=True)
+
     timezone = TimeZoneField(_("timezone"))
     language = models.CharField(
         _("language"),
@@ -89,6 +109,18 @@ class Account(models.Model):
         if value.tzinfo is None:
             value = pytz.timezone(settings.TIME_ZONE).localize(value)
         return value.astimezone(pytz.timezone(timezone))
+
+
+    def save(self, *args, **kwargs):
+        self.modified_at = timezone.now()
+        return super(Account, self).save(*args, **kwargs)
+
+    @property
+    def display_name(self):
+        if self.name:
+            return self.name
+        else:
+            return self.user.username
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

@@ -27,6 +27,14 @@ class UsernameAuthenticationBackend(ModelBackend):
                 return None
 
 
+
+
+def _user_has_perm(user, perm, obj):
+
+    return False
+
+
+
 class EmailAuthenticationBackend(ModelBackend):
 
     def authenticate(self, *args, **credentials):
@@ -42,3 +50,21 @@ class EmailAuthenticationBackend(ModelBackend):
                     return user
             except KeyError:
                 return None
+
+
+    def has_perm(self, user, perm, obj=None):
+        """
+        Returns True if the user has the specified permission. This method
+        queries all available auth backends, but returns immediately if any
+        backend returns True. Thus, a user who has permission from a single
+        auth backend is assumed to have permission in general. If an object is
+        provided, permissions for this specific object are checked.
+        """
+
+        # Active superusers have all permissions.
+        if user.is_active and user.is_superuser:
+            return True
+
+        # Otherwise we need to check the backends.
+        return _user_has_perm(user, perm, obj)
+

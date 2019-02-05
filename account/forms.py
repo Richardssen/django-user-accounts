@@ -12,7 +12,7 @@ from account.conf import settings
 from account.hooks import hookset
 from account.models import EmailAddress
 from account.utils import get_user_lookup_kwargs
-
+from .models import Account
 try:
     from collections import OrderedDict
 except ImportError:
@@ -232,3 +232,31 @@ class SettingsForm(forms.Form):
         if not qs.exists() or not settings.ACCOUNT_EMAIL_UNIQUE:
             return value
         raise forms.ValidationError(_("A user is registered with this email address."))
+
+
+class ProfileForm(forms.ModelForm):
+
+    class Meta:
+        model = Account
+        fields = [
+            "name",
+            "apellidos",
+            "avatar",
+            "bio",
+            "affiliation",
+            "location",
+            "website",
+            "twitter_username",
+        ]
+
+    def clean_twitter_username(self):
+        value = self.cleaned_data["twitter_username"]
+        value = value.strip()
+        if not value:
+            return value
+        if value.startswith("@"):
+            value = value[1:]
+        m = re.match(r"^[a-zA-Z0-9_]{1,20}$", value)
+        if not m:
+            raise forms.ValidationError("invalid Twitter username")
+        return value

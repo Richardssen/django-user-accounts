@@ -38,6 +38,22 @@ from account.models import (
     SignupCode,
 )
 from account.utils import default_redirect, get_form_data
+from django.shortcuts import render
+
+from django.urls import reverse
+from django.views.generic import UpdateView, DetailView, ListView
+
+from django.contrib import messages
+
+from account.mixins import LoginRequiredMixin
+
+from .forms import ProfileForm
+from .models import Account
+
+
+def template_names(req, name):
+    template = "worlds/{}/{}".format(req.request.session['domain'], name)
+    return template
 
 
 class PasswordMixin(object):
@@ -613,9 +629,11 @@ class PasswordResetView(FormView):
     form_class = PasswordResetForm
     token_generator = default_token_generator
 
+
     @method_decorator(csrf_protect)
     def dispatch(self, *args, **kwargs):
         return super(PasswordResetView, self).dispatch(*args, **kwargs)
+
 
     def get_context_data(self, **kwargs):
         context = super(PasswordResetView, self).get_context_data(**kwargs)
@@ -631,6 +649,7 @@ class PasswordResetView(FormView):
             "context": self.get_context_data(form=form)
         }
         return self.response_class(**response_kwargs)
+
 
     def send_email(self, email):
         User = get_user_model()
@@ -842,3 +861,52 @@ class DeleteView(LoginRequiredMixin, LogoutView):
         ctx.update(kwargs)
         ctx["ACCOUNT_DELETION_EXPUNGE_HOURS"] = settings.ACCOUNT_DELETION_EXPUNGE_HOURS
         return ctx
+
+
+
+class ProfileEditView(LoginRequiredMixin, UpdateView):
+
+    form_class = ProfileForm
+    model = Account
+    context_object_name = "profile"
+
+    @method_decorator(sensitive_post_parameters())
+    @method_decorator(csrf_protect)
+    @method_decorator(never_cache)
+    def dispatch(self, *args, **kwargs):
+        self.template_name = template_names(self, "mod_profiles/account_form.html")
+        return super(ProfileEditView, self).dispatch(*args, **kwargs)
+
+
+    def get_object(self):
+        return self.request.user.account
+
+    def get_success_url(self):
+        return reverse("profiles_list")
+
+    def form_valid(self, form):
+        response = super(ProfileEditView, self).form_valid(form)
+        messages.success(self.request, "You successfully updated your profile.")
+        return response
+
+
+class ProfileDetailView(DetailView):
+
+    model = Account
+    slug_url_kwarg = "username"
+    slug_field = "user__username"
+    context_object_name = "profile"
+
+    def dispatch(self, *args, **kwargs):
+        self.template_name = template_names(self, "account/profile.html")
+        return super(ProfileDetailView, self).dispatch(*args, **kwargs)
+
+class ProfileListView(ListView):
+
+    model = Account
+    context_object_name = "profiles"
+
+    def dispatch(self, *args, **kwargs):
+        self.template_name = template_names(self, "mod_profiles/account_list.html")
+        return super(ProfileListView, self).dispatch(*args, **kwargs)
+

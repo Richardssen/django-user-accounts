@@ -1,6 +1,13 @@
 from __future__ import unicode_literals
 
 import django.dispatch
+from django.dispatch import receiver
+
+from django.db.models.signals import post_save
+
+from django.contrib.auth.models import User
+
+
 
 user_signed_up = django.dispatch.Signal(providing_args=["user", "form"])
 user_sign_up_attempt = django.dispatch.Signal(providing_args=["username", "email", "result"])
@@ -12,3 +19,4 @@ email_confirmed = django.dispatch.Signal(providing_args=["email_address"])
 email_confirmation_sent = django.dispatch.Signal(providing_args=["confirmation"])
 password_changed = django.dispatch.Signal(providing_args=["user"])
 password_expired = django.dispatch.Signal(providing_args=["user"])
+
